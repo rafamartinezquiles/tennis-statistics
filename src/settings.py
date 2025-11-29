@@ -1,5 +1,3 @@
-# src/settings.py
-
 from datetime import datetime
 
 APP_TITLE = "Satellite Time-lapse Studio"
