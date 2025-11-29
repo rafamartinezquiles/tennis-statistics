@@ -1,6 +1,5 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import tempfile
-import os
 
 import numpy as np
 import xarray as xr
@@ -8,16 +7,36 @@ import matplotlib.pyplot as plt
 import imageio
 
 
-def prepare_rgb_stack(
-    dataset: xr.Dataset,
-    bands: List[str],
-) -> xr.DataArray:
+def prepare_rgb_stack(dataset: xr.Dataset, bands: List[str]) -> xr.DataArray:
     """
-    Returns a DataArray with dimensions: (band, time, y, x)
+    Returns a DataArray with dimensions: (band, time, ...spatial...)
+    Typically: band, time, latitude, longitude
     """
     rgb_ds = dataset[bands]
-    stack = rgb_ds.to_array("band")  # dims: band, time, y, x
+    stack = rgb_ds.to_array("band")  # dims: band, time, latitude, longitude (or y/x)
     return stack
+
+
+def _get_spatial_dims(da: xr.DataArray) -> Tuple[str, str]:
+    """
+    Infer the two spatial dimension names from a DataArray.
+
+    We try common patterns: (latitude, longitude) or (y, x).
+    """
+    dims = list(da.dims)
+
+    # Remove non-spatial dims we know about
+    for non_spatial in ("time", "band"):
+        if non_spatial in dims:
+            dims.remove(non_spatial)
+
+    if len(dims) != 2:
+        raise ValueError(
+            f"Could not infer spatial dimensions from {da.dims}. "
+            "Expected two spatial dimensions."
+        )
+
+    return dims[0], dims[1]
 
 
 def render_frames_rgb(
@@ -26,15 +45,22 @@ def render_frames_rgb(
 ) -> Tuple[List[np.ndarray], np.ndarray]:
     """
     Creates RGB frames from a band stack.
+
+    rgb_stack dims: band, time, latitude, longitude (or band, time, y, x)
     """
     frames: List[np.ndarray] = []
     times = rgb_stack["time"].values
 
+    # We'll infer spatial dims from a single time slice
+    example_slice = rgb_stack.isel(time=0)
+    h_dim, w_dim = _get_spatial_dims(example_slice)
+
     for idx in range(rgb_stack.sizes["time"]):
-        # select (band, y, x)
-        slice_ = rgb_stack.isel(time=idx)
-        # reorder to (y, x, band)
-        array = slice_.transpose("y", "x", "band").values
+        slice_ = rgb_stack.isel(time=idx)  # dims: band, h_dim, w_dim
+        # Reorder to (h_dim, w_dim, band)
+        array = slice_.transpose(h_dim, w_dim, "band").values
+
+        # Simple scaling from reflectance to display range
         array = np.clip(array / 4000.0, 0, 1)
         rgb_image = (array * 255).astype(np.uint8)
 
@@ -59,13 +85,13 @@ def render_frames_ndvi(
     mode_label: str = "NDVI",
 ) -> Tuple[List[np.ndarray], np.ndarray]:
     """
-    Creates colored NDVI frames (using RDYlGn colormap).
+    Creates colored NDVI frames (using RdYlGn colormap).
     """
     frames: List[np.ndarray] = []
     times = ndvi["time"].values
 
     for idx in range(ndvi.sizes["time"]):
-        slice_ = ndvi.isel(time=idx).values
+        slice_ = ndvi.isel(time=idx).values  # 2D: spatial dims
         slice_ = np.clip(slice_, 0, 1)
 
         cmapped = plt.cm.RdYlGn(slice_)[..., :3]
