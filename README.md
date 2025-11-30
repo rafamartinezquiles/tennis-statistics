@@ -57,3 +57,11 @@ git clone https://github.com/rafamartinezquiles/satellite-timelapse.git
 cd satellite-timelapse
 pip install -r requirements.txt
 ```
+
+## Usage
+To run the application, launch Streamlit from the project directory using the command below. The interface will open in your browser automatically. From there, draw the area of interest on the map, configure the date range, cloud-cover filter, and visualization mode, and then click Generate Time-Lapse to begin the processing workflow.
+
+```bash
+streamlit run src/app.py
+```
+
