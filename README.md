@@ -9,3 +9,23 @@ Generating meaningful visualizations from satellite data requires a complete pip
 Each frame of the time-lapse is produced by combining the selected spectral bands, such as natural color (B04, B03, B02), color-infrared (B08, B04, B03), or vegetation-focused composites, and applying robust normalization to produce clear RGB output. For analytical modes like NDVI, the system computes vegetation index values and maps them to a perceptual colormap, producing scientifically meaningful visual transitions over time. Optional analytics compute NDVI statistics per frame, generating an accompanying temporal profile useful for environmental inspection and remote-sensing analysis.
 
 A modular architecture separates the application into clean units: a Streamlit UI for configuration, a Folium map component for spatial input, a STAC query engine, a data-loading and harmonization module, and a dedicated video-generation subsystem. This design ensures smooth integration, low coupling, and high maintainability. The final result is an exported MP4 time-lapse video that illustrates landscape changes, vegetation dynamics, cloud-free mosaics, or seasonal patterns across the selected region—making the tool accessible for environmental monitoring, agricultural studies, research workflows, and educational exploration.
+
+## Table of Contents
+```
+satellite-timelapse
+|__ images
+|   |__ system.png
+|   |__ banana.png
+|__ src
+    |__ analytics.py
+    |__ app.py
+    |__ layout.py
+    |__ map_view.py
+    |__ settings.py
+    |__ stac_search.py
+    |__ timelapse.py
+.gitignore
+README.md
+requirements.txt
+LICENSE
+```
